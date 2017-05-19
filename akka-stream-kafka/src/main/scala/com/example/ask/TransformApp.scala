@@ -5,6 +5,8 @@ import akka.actor.ActorSystem
 import akka.kafka.scaladsl._
 import akka.kafka._
 import akka.stream.ActorMaterializer
+import com.example.prototutorial.addressbook.Person
+import com.example.prototutorial.addressbook.Person.{PhoneNumber, PhoneType}
 import com.typesafe.config.ConfigFactory
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization._
@@ -16,6 +18,8 @@ import scala.concurrent.duration._
 /*
 
 https://github.com/foundweekends/giter8/wiki/giter8-templates
+
+sbt protocGenerate
 
 -Dinput-topic=kfk_str_test
 -Doutput-topic=kfk_str_test
@@ -50,6 +54,7 @@ object TransformApp extends App {
         .committableSource(consumerSettings, Subscriptions.topics(inputTopic))
         .map { msg =>
 
+          Person("michal", 2, "lolo@xyx.xy", Seq(PhoneNumber("213123123123", PhoneType.HOME)))
           println(msg.record.value)
           Thread.sleep(3000)
           /**
