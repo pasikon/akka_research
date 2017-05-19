@@ -15,6 +15,8 @@ import scala.concurrent.duration._
 
 /*
 
+https://github.com/foundweekends/giter8/wiki/giter8-templates
+
 -Dinput-topic=kfk_str_test
 -Doutput-topic=kfk_str_test
 -Dakka.kafka.consumer.kafka-clients.group.id=akka_streams_ex_gr
