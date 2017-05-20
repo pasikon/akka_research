@@ -1,4 +1,8 @@
-# akka-stream-kafka
+# akka-str-kafka-protobuf-scalapb
+
+# Info
+
+Simple POC for using Protocol Buffer with ScalaPB witk akka-streams-kafka
 
 # Building
 
@@ -14,6 +18,16 @@
 * `akka.kafka.consumer.kafka-clients.group.id`
 * `akka.kafka.consumer.kafka-clients.bootstrap.servers`
 * `akka.kafka.producer.kafka-clients.bootstrap.servers`
+
+example:
+
+sbt protocGenerate
+
+-Dinput-topic=kfk_str_test 
+-Doutput-topic=kfk_str_test
+-Dakka.kafka.consumer.kafka-clients.group.id=akka_streams_ex_gr
+-Dakka.kafka.consumer.kafka-clients.bootstrap.servers=localhost:9092
+-Dakka.kafka.producer.kafka-clients.bootstrap.servers=localhost:9092
 
 ## Running locally
 
