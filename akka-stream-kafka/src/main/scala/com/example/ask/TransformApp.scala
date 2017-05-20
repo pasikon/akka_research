@@ -5,9 +5,11 @@ import akka.actor.ActorSystem
 import akka.kafka.scaladsl._
 import akka.kafka._
 import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.Source
 import com.example.prototutorial.addressbook.Person
 import com.example.prototutorial.addressbook.Person.{PhoneNumber, PhoneType}
 import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization._
 
@@ -28,7 +30,7 @@ sbt protocGenerate
 -Dakka.kafka.producer.kafka-clients.bootstrap.servers=localhost:9092
 
  */
-object TransformApp extends App {
+object TransformApp extends App with LazyLogging {
 
   private val config = ConfigFactory.load()
   private val inputTopic = config.getString("input-topic")
@@ -36,14 +38,26 @@ object TransformApp extends App {
   private implicit val actorSystem =
     ActorSystem("kafka-mirror-system", config)
 
+
   try {
     val producerSettings = ProducerSettings(actorSystem,
-                                            new ByteArraySerializer,
-                                            new StringSerializer)
+      new ByteArraySerializer,
+      new ByteArraySerializer)
     val consumerSettings = ConsumerSettings(actorSystem,
-                                            new ByteArrayDeserializer,
-                                            new StringDeserializer)
+      new ByteArrayDeserializer,
+      new ByteArrayDeserializer)
+
     implicit val actorMaterializer = ActorMaterializer()
+
+    val person: Person = Person("michal", 2, "lolo@xyx.xy", Seq(PhoneNumber("213123123123", PhoneType.HOME)))
+
+    //one person to topic
+    val done = Source(person :: Nil)
+      .map(_.toByteArray)
+      .map { elem =>
+        new ProducerRecord[Array[Byte], Array[Byte]](inputTopic, elem)
+      }
+      .runWith(Producer.plainSink(producerSettings))
 
     /**
       * Using a committableSource and a committableSink,
@@ -54,7 +68,6 @@ object TransformApp extends App {
         .committableSource(consumerSettings, Subscriptions.topics(inputTopic))
         .map { msg =>
 
-          Person("michal", 2, "lolo@xyx.xy", Seq(PhoneNumber("213123123123", PhoneType.HOME)))
           println(msg.record.value)
           Thread.sleep(3000)
           /**
@@ -67,14 +80,18 @@ object TransformApp extends App {
             if (msg.record.timestamp() < 0) null
             else msg.record.timestamp()
           }
+
+//          logger.info(s"Consumed ${msg.record.value()}")
+          println(s"Consumed ${Person.parseFrom(msg.record.value)}")
+
           ProducerMessage.Message(new ProducerRecord(
-                                    outputTopic,
-                                    null,
-                                    newTimestamp,
-                                    msg.record.key,
-                                    msg.record.value
-                                  ),
-                                  msg.committableOffset)
+            outputTopic,
+            null,
+            newTimestamp,
+            msg.record.key,
+            msg.record.value
+          ),
+            msg.committableOffset)
         }
         .runWith(Producer.commitableSink(producerSettings))
 
